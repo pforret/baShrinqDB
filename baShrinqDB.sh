@@ -84,6 +84,10 @@ main() {
         initialize
         ;;
 
+    test )
+        run_tests
+        ;;
+
     *)
         die "param [$action] not recognized"
     esac
@@ -378,7 +382,8 @@ verify_programs(){
     programs_ok=1
     for prog in "$@" ; do
       if [[ -z $(which "$prog") ]] ; then
-        die "$PROGIDEN needs [$prog] but this program cannot be found on this $os_uname machine"
+        [[ "$action" == "test" ]] || die "$PROGIDEN needs [$prog] but this program cannot be found on this $os_uname machine"
+        [[ "$action" == "test" ]] && alert "$PROGIDEN needs [$prog] but this program cannot be found on this $os_uname machine"
         programs_ok=0
       fi
     done
