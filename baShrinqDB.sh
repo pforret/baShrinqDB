@@ -145,10 +145,13 @@ main() {
         # shellcheck disable=SC2154
         folder_prep "$outd" "$keep"
         initialize
+        # shellcheck disable=SC2154
+        subfolder=$(date "$format")
+        # shellcheck disable=SC2154
+        out "Backup to folder [$outd/$subfolder]"
         list_dbs \
         | while read -r dbname ; do
             # shellcheck disable=SC2154
-            subfolder=$(date "$format")
             # shellcheck disable=SC2154
             [[ ! -d "$outd/$subfolder" ]] && mkdir -p "$outd/$subfolder"
             # shellcheck disable=SC2154
@@ -156,7 +159,6 @@ main() {
             out_path="$outd/$subfolder/$out_file"
             progress "Backup [$dbname] to $out_file"
             export_db_to_disk "$dbname" "$out_path"
-            sleep 1
             outsize=$(du -h "$out_path" | awk '{print $1}')
             out "Backup [$dbname] : $outsize ($out_file)"
             done
