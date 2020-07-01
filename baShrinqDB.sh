@@ -87,10 +87,10 @@ list_dbs(){
 export_db_to_disk(){
   # $1 : db name
   # $2 : sql dump file or zip
-  local outfile
+  local out_file
   local out_type
-  outfile=$(basename "$2")
-  out_type=${outfile##*.}
+  out_file=$(basename "$2")
+  out_type=${out_file##*.}
 
   case "$out_type" in
   gz|gzip)
@@ -152,11 +152,12 @@ main() {
             # shellcheck disable=SC2154
             [[ ! -d "$outd/$subfolder" ]] && mkdir -p "$outd/$subfolder"
             # shellcheck disable=SC2154
-            outfile="$outd/$subfolder/$dbname.$extension"
-            progress "Backup [$dbname] to $(basename '$outfile')"
-            export_db_to_disk "$dbname" "$outfile"
+            out_file="$dbname.$extension"
+            out_path="$outd/$subfolder/$out_file"
+            progress "Backup [$dbname] to $out_file"
+            export_db_to_disk "$dbname" "$out_path"
             sleep 1
-            outsize=$(du -h "$outfile")
+            outsize=$(du -h "$out_path" | awk '{print $1}')
             out "Backup [$dbname] : $outsize    "
             done
         ;;
