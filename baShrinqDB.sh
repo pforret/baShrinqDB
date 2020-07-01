@@ -45,6 +45,7 @@ param|1|action|action to perform: list/backup/restore
 ## Put your helper scripts here
 
 initialize(){
+# shellcheck disable=SC2154
   cat > "$tmpfile" <<ENDFILE
 [client]
 host=$server
@@ -73,27 +74,27 @@ export_db_to_disk(){
   # $1 : db name
   # $2 : sql dump file or zip
   local outfile
-  local outext
-  outfile=$(basename $2)
-  outext=${outfile##*.}
+  local out_ext
+  outfile=$(basename "$2")
+  out_ext=${outfile##*.}
 
-  case "$outext" in
+  case "$out_ext" in
   gz|gzip)
     verify_programs gzip
-    sqltemp="$2".sql
-    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && gzip -q -c "$sqltemp" > "$2" && rm "$sqltemp"
+    sql_temp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && gzip -q -c "$sql_temp" > "$2" && rm "$sql_temp"
     ;;
 
   zip|ZIP)
     verify_programs zip
-    sqltemp="$2".sql
-    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && zip "$2" "$sqltemp" && rm "$sqltemp"
+    sql_temp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && zip "$2" "$sql_temp" && rm "$sql_temp"
     ;;
 
   7z|7zip)
     verify_programs 7z
-    sqltemp="$2".sql
-    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && 7z a "$2" "$sqltemp"
+    sql_temp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && 7z a "$2" "$sql_temp"
     ;;
 
   sql|SQL)
@@ -101,7 +102,7 @@ export_db_to_disk(){
     ;;
 
   *)
-    die "Cannot export [$1] to $outext format"
+    die "Cannot export [$1] to $out_ext format"
 
   esac
 }
@@ -128,8 +129,11 @@ main() {
     backup )
         initialize \
         | while read -r dbname ; do
+            # shellcheck disable=SC2154
             subfolder=$(date "$format")
+            # shellcheck disable=SC2154
             [[ ! -d "$outd/$subfolder" ]] && mkdir "$outd/$subfolder"
+            # shellcheck disable=SC2154
             outfile="$outd/$subfolder/$dbname.$extension"
             export_db_to_disk "$dbname" "$outfile"
             done
