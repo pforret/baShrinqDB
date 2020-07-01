@@ -68,7 +68,18 @@ ENDFILE
 list_dbs(){
   # -N : Do not write column names in results
   # -B : Print results using tab as the column separator, with each row on a new line
-  mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases'
+  mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases' \
+  | if [[ -z "$include" ]] ; then
+      cat
+    else
+      grep "$include"
+    fi \
+  | if [[ -z "$exclude" ]] ; then
+      cat
+    else
+      grep -v "$exclude"
+    fi
+
  }
 
 export_db_to_disk(){
