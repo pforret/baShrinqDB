@@ -11,6 +11,7 @@ readonly PROGVERS="0.1"
 readonly PROGAUTH="peter@forret.com"
 readonly prefix_fmt='+%H:%M:%S | '
 readonly runasroot=-1
+USER=${USER:-dbuser}
 
 list_options() {
   ### Change the next lines to reflect which flags/options/parameters you need
@@ -21,7 +22,6 @@ list_options() {
   ### param:  comes after the options
   ### param|<type>|<long>|<description>
   ### where <type> = 1 for single parameters or <type> = n for (last) parameter that can be a list
-  USER=${USER:-dbuser}
 echo -n "
 #commented lines will be filtered
 flag|h|help|show usage
