@@ -30,7 +30,7 @@ flag|v|verbose|output more
 flag|f|force|do not ask for confirmation (always yes)
 option|l|logd|folder for log files |log
 option|m|format|date format for subfolders|+%Y-%m-%d
-option|o|outd|backup folder|.
+option|o|outd|backup folder|backup
 option|k|keep|days to keep backups|7
 option|e|extension|backup extension (sql/gz/zip/7z)|gz
 option|q|port|tcp port for db server|3306
