@@ -69,12 +69,12 @@ list_dbs(){
   # -N : Do not write column names in results
   # -B : Print results using tab as the column separator, with each row on a new line
   mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases' \
-  | if [[ -z "$include" ]] ; then
+  | if  [[ "$include" == "*" ]] ; then
       cat
     else
       grep "$include"
     fi \
-  | if [[ -z "$exclude" ]] ; then
+  | if  [[ "$exclude" == "-" ]] ; then
       cat
     else
       grep -v "$exclude"
@@ -86,11 +86,12 @@ export_db_to_disk(){
   # $1 : db name
   # $2 : sql dump file or zip
   local outfile
-  local out_ext
+  local out_type
   outfile=$(basename "$2")
-  out_ext=${outfile##*.}
+  out_type=${outfile##*.}
+  log "Export [$1] to [$2] ..."
 
-  case "$out_ext" in
+  case "$out_type" in
   gz|gzip)
     verify_programs gzip mysqldump
     sql_temp="$2".sql
@@ -115,7 +116,7 @@ export_db_to_disk(){
     ;;
 
   *)
-    die "Cannot export [$1] to $out_ext format"
+    die "Cannot export [$1] to $out_type format"
 
   esac
 }
@@ -131,7 +132,6 @@ main() {
     verify_programs awk curl cut date echo find grep head printf sed stat tail uname wc
     prep_log_and_temp_dir
 
-
     action=$(lcase "$action")
     case $action in
     list )
@@ -140,7 +140,8 @@ main() {
         ;;
 
     backup )
-        initialize \
+        initialize
+        list_dbs \
         | while read -r dbname ; do
             # shellcheck disable=SC2154
             subfolder=$(date "$format")
@@ -515,9 +516,9 @@ parse_options() {
         ## all flags/options processed
         break
       fi
-	  local save_option
+      local save_option
       save_option=$(list_options \
-        | awk -v opt="$1" '
+      | awk -v opt="$1" '
         BEGIN { FS="|"; OFS=" ";}
         $1 ~ /flag/   &&  "-"$2 == opt {print $3"=1"}
         $1 ~ /flag/   && "--"$3 == opt {print $3"=1"}
@@ -528,8 +529,8 @@ parse_options() {
         ')
         if [[ -n "$save_option" ]] ; then
           if echo "$save_option" | grep shift >> /dev/null ; then
-			local save_var
-			save_var=$(echo "$save_option" | cut -d= -f1)
+            local save_var
+            save_var=$(echo "$save_option" | cut -d= -f1)
             log "Found  : ${save_var}=$2"
           else
             log "Found  : $save_option"
