@@ -28,25 +28,38 @@ flag|q|quiet|no output
 flag|v|verbose|output more
 flag|f|force|do not ask for confirmation (always yes)
 option|l|logd|folder for log files |log
+option|m|format|date format for subfolders|+%Y-%m-%d
+option|o|outd|backup folder|.
+option|e|extension|backup extension (sql/gz/zip/7z)|gz
+option|q|port|tcp port for db server|3306
+option|s|server|database server (mySQL/MariaDB)|localhost
 option|t|tmpd|folder for temp files|.tmp
-option|d|dbserver|Database Server (mySQL/MariaDB)|localhost
-option|u|user|USER to use|$USER
-secret|p|pass|password to use|-
 option|i|include|databases to export/import|*
 option|x|exclude|databases NOT to export/import|-
+option|u|user|USER to use|$USER
+secret|p|pass|password to use|-
 param|1|action|action to perform: list/backup/restore
-param|1|output|backup folder
 " | grep -v '^#'
 }
 
 ## Put your helper scripts here
 
 initialize(){
-  cat > "$tmpfile" <<END
+  cat > "$tmpfile" <<ENDFILE
 [client]
+host=$server
+port=$port
 user=$user
 password=$pass
-END
+
+[mysqldump]
+quick
+complete-insert
+routines
+triggers
+single-transaction
+
+ENDFILE
 
 
 }
@@ -56,6 +69,42 @@ list_dbs(){
   mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases'
  }
 
+export_db_to_disk(){
+  # $1 : db name
+  # $2 : sql dump file or zip
+  local outfile
+  local outext
+  outfile=$(basename $2)
+  outext=${outfile##*.}
+
+  case "$outext" in
+  gz|gzip)
+    verify_programs gzip
+    sqltemp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && gzip -q -c "$sqltemp" > "$2" && rm "$sqltemp"
+    ;;
+
+  zip|ZIP)
+    verify_programs zip
+    sqltemp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && zip "$2" "$sqltemp" && rm "$sqltemp"
+    ;;
+
+  7z|7zip)
+    verify_programs 7z
+    sqltemp="$2".sql
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sqltemp" && 7z a "$2" "$sqltemp"
+    ;;
+
+  sql|SQL)
+    mysqldump --defaults-extra-file="$tmpfile" "$1" > "$2"
+    ;;
+
+  *)
+    die "Cannot export [$1] to $outext format"
+
+  esac
+}
 #####################################################################
 ## Put your main script here
 #####################################################################
@@ -77,7 +126,13 @@ main() {
         ;;
 
     backup )
-        initialize
+        initialize \
+        | while read -r dbname ; do
+            subfolder=$(date "$format")
+            [[ ! -d "$outd/$subfolder" ]] && mkdir "$outd/$subfolder"
+            outfile="$outd/$subfolder/$dbname.$extension"
+            export_db_to_disk "$dbname" "$outfile"
+            done
         ;;
 
     restore )
