@@ -21,6 +21,7 @@ list_options() {
   ### param:  comes after the options
   ### param|<type>|<long>|<description>
   ### where <type> = 1 for single parameters or <type> = n for (last) parameter that can be a list
+  [[ -z "$USER" ]]  && USER=$(whoami)
 echo -n "
 #commented lines will be filtered
 flag|h|help|show usage
