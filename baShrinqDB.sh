@@ -155,7 +155,7 @@ main() {
             # shellcheck disable=SC2154
             outfile="$outd/$subfolder/$dbname.$extension"
             export_db_to_disk "$dbname" "$outfile"
-            outsize=$(du -h "$outfile" | awk '{print $1}')
+            outsize=$(du -h "$outfile")
             out "Backup [$dbname] : $outsize    "
             done
         ;;
