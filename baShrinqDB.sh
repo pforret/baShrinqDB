@@ -36,8 +36,8 @@ option|e|extension|backup extension (sql/gz/zip/7z)|gz
 option|q|port|tcp port for db server|3306
 option|s|server|database server (mySQL/MariaDB)|localhost
 option|t|tmpd|folder for temp files|.tmp
-option|i|include|databases to export/import|
-option|x|exclude|databases NOT to export/import|
+option|i|include|databases to export/import|-
+option|x|exclude|databases NOT to export/import|-
 option|u|user|USER to use|$USER
 secret|p|pass|password to use|-
 param|1|action|action to perform: list/backup/restore
@@ -70,12 +70,13 @@ list_dbs(){
   # -N : Do not write column names in results
   # -B : Print results using tab as the column separator, with each row on a new line
   mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases' \
-  | if  [[ "${include:-}" == "" ]] ; then
+  | grep -v 'information_schema|performance_schema' \
+  | if  [[ "${include:-}" == "-" ]] ; then
       cat
     else
       grep "$include"
     fi \
-  | if  [[ "${exclude:-}" == "" ]] ; then
+  | if  [[ "${exclude:-}" == "-" ]] ; then
       cat
     else
       grep -v "$exclude"
