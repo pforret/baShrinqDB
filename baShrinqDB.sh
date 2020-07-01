@@ -31,12 +31,13 @@ flag|f|force|do not ask for confirmation (always yes)
 option|l|logd|folder for log files |log
 option|m|format|date format for subfolders|+%Y-%m-%d
 option|o|outd|backup folder|.
+option|k|keep|days to keep backups|7
 option|e|extension|backup extension (sql/gz/zip/7z)|gz
 option|q|port|tcp port for db server|3306
 option|s|server|database server (mySQL/MariaDB)|localhost
 option|t|tmpd|folder for temp files|.tmp
-option|i|include|databases to export/import|*
-option|x|exclude|databases NOT to export/import|-
+option|i|include|databases to export/import|
+option|x|exclude|databases NOT to export/import|
 option|u|user|USER to use|$USER
 secret|p|pass|password to use|-
 param|1|action|action to perform: list/backup/restore
@@ -69,12 +70,12 @@ list_dbs(){
   # -N : Do not write column names in results
   # -B : Print results using tab as the column separator, with each row on a new line
   mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases' \
-  | if  [[ "$include" == "*" ]] ; then
+  | if  [[ "${include:-}" == "" ]] ; then
       cat
     else
       grep "$include"
     fi \
-  | if  [[ "$exclude" == "-" ]] ; then
+  | if  [[ "${exclude:-}" == "" ]] ; then
       cat
     else
       grep -v "$exclude"
@@ -132,6 +133,7 @@ main() {
     verify_programs awk curl cut date echo find grep head printf sed stat tail uname wc
     prep_log_and_temp_dir
 
+
     action=$(lcase "$action")
     case $action in
     list )
@@ -140,16 +142,21 @@ main() {
         ;;
 
     backup )
+        # shellcheck disable=SC2154
+        folder_prep "$outd" "$keep"
         initialize
         list_dbs \
         | while read -r dbname ; do
+            progress "Backup [$dbname] ..."
             # shellcheck disable=SC2154
             subfolder=$(date "$format")
             # shellcheck disable=SC2154
-            [[ ! -d "$outd/$subfolder" ]] && mkdir "$outd/$subfolder"
+            [[ ! -d "$outd/$subfolder" ]] && mkdir -p "$outd/$subfolder"
             # shellcheck disable=SC2154
             outfile="$outd/$subfolder/$dbname.$extension"
             export_db_to_disk "$dbname" "$outfile"
+            outsize=$(du -h "$outfile" | awk '{print $1}')
+            out "Backup [$dbname] : $outsize    "
             done
         ;;
 
