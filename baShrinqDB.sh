@@ -70,7 +70,7 @@ list_dbs(){
   # -N : Do not write column names in results
   # -B : Print results using tab as the column separator, with each row on a new line
   mysql --defaults-extra-file="$tmpfile" -B -N -e 'show databases' \
-  | grep -v 'information_schema|performance_schema' \
+  | grep -v -E 'information_schema|performance_schema|mysql' \
   | if  [[ "${include:-}" == "-" ]] ; then
       cat
     else
@@ -91,7 +91,6 @@ export_db_to_disk(){
   local out_type
   outfile=$(basename "$2")
   out_type=${outfile##*.}
-  log "Export [$1] to [$2] ..."
 
   case "$out_type" in
   gz|gzip)
@@ -148,14 +147,15 @@ main() {
         initialize
         list_dbs \
         | while read -r dbname ; do
-            progress "Backup [$dbname] ..."
             # shellcheck disable=SC2154
             subfolder=$(date "$format")
             # shellcheck disable=SC2154
             [[ ! -d "$outd/$subfolder" ]] && mkdir -p "$outd/$subfolder"
             # shellcheck disable=SC2154
             outfile="$outd/$subfolder/$dbname.$extension"
+            progress "Backup [$dbname] to $(basename '$outfile')"
             export_db_to_disk "$dbname" "$outfile"
+            sleep 1
             outsize=$(du -h "$outfile")
             out "Backup [$dbname] : $outsize    "
             done
