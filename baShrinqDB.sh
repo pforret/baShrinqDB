@@ -81,24 +81,25 @@ export_db_to_disk(){
 
   case "$out_ext" in
   gz|gzip)
-    verify_programs gzip
+    verify_programs gzip mysqldump
     sql_temp="$2".sql
     mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && gzip -q -c "$sql_temp" > "$2" && rm "$sql_temp"
     ;;
 
   zip|ZIP)
-    verify_programs zip
+    verify_programs zip mysqldump
     sql_temp="$2".sql
     mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && zip "$2" "$sql_temp" && rm "$sql_temp"
     ;;
 
   7z|7zip)
-    verify_programs 7z
+    verify_programs 7z mysqldump
     sql_temp="$2".sql
     mysqldump --defaults-extra-file="$tmpfile" "$1" > "$sql_temp" && 7z a "$2" "$sql_temp"
     ;;
 
   sql|SQL)
+    verify_programs mysqldump
     mysqldump --defaults-extra-file="$tmpfile" "$1" > "$2"
     ;;
 
@@ -116,7 +117,7 @@ main() {
     log "Updated: $PROGDATE"
     log "Run as : $USER@$HOSTNAME"
     # add programs you need in your script here, like tar, wget, ffmpeg, rsync ...
-    verify_programs awk curl cut date echo find grep head printf sed stat tail uname wc mysql mysqldump
+    verify_programs awk curl cut date echo find grep head printf sed stat tail uname wc
     prep_log_and_temp_dir
 
 
@@ -409,6 +410,7 @@ init_options() {
     $1 ~ /flag/   && $5 != "" {print $3"="$5"; "}
     $1 ~ /option/ && $5 == "" {print $3"=\" \"; "}
     $1 ~ /option/ && $5 != "" {print $3"="$5"; "}
+    $1 ~ /secret/             {print $3"=\" \"; "}
     ')
     if [[ -n "$init_command" ]] ; then
         #log "init_options: $(echo "$init_command" | wc -l) options/flags initialised"
@@ -510,6 +512,8 @@ parse_options() {
         $1 ~ /flag/   && "--"$3 == opt {print $3"=1"}
         $1 ~ /option/ &&  "-"$2 == opt {print $3"=$2; shift"}
         $1 ~ /option/ && "--"$3 == opt {print $3"=$2; shift"}
+        $1 ~ /secret/ &&  "-"$2 == opt {print $3"=$2; shift"}
+        $1 ~ /secret/ && "--"$3 == opt {print $3"=$2; shift"}
         ')
         if [[ -n "$save_option" ]] ; then
           if echo "$save_option" | grep shift >> /dev/null ; then
