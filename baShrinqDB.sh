@@ -158,7 +158,7 @@ main() {
             export_db_to_disk "$dbname" "$out_path"
             sleep 1
             outsize=$(du -h "$out_path" | awk '{print $1}')
-            out "Backup [$dbname] : $outsize    "
+            out "Backup [$dbname] : $outsize ($out_file)"
             done
         ;;
 
